@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Descontos no benefício previdenciário</title>
+<link rel="icon" href="./img.png">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+	table {width: 100%;}
+
+table, td{
+        border: 1px solid;
+border-spacing: 2px;
+    border-color: gray;
+    }
+    #pdfText {
+        white-space: pre-wrap;
+    }
+    
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="mt-5">Descontos no benefício previdenciário</h1>
+<h6 class="text-secondary"><i>Em fase de testes</i></h6>
+<h6 class="text-end">Feito por <a href="http://lattes.cnpq.br/6702944102751831">Daniel Millan</a></h6>
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <label for="fileInput" class="form-label">Selecione o arquivo PDF:</label>
+            <input type="file" id="fileInput" class="form-control" accept=".pdf">
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <label for="numBanco" class="form-label">Valor:</label>  <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text">R$</span>
+              </div>
+            <input type="number" step="0.01" min="0.01" placeholder="100,00" required id="numBanco" class="form-control"></div>
+        </div>
+        <div class="col-md-3">
+            <label for="desc" class="form-label">Descrição do desconto:</label>
+              <div class="input-group mb-3">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+              <ul class="dropdown-menu" id="dropDesc">
+                <li><a class="dropdown-item" >Emprestimo bancario</a></li>
+                <li><a class="dropdown-item" >Emprestimo sobre a RMC</a></li>
+                <li><a class="dropdown-item">Contribuicao</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item">Contribuicao ABRAPPS</a></li>
+                <li><a class="dropdown-item">Contribuicao CENTRAPE</a></li>
+              </ul>
+              <input type="text" id="desc" class="form-control">
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4 ">
+          <label class="form-check-label" for="qualquer">
+          Qualquer valor: 
+          </label>
+            <input class="form-check-input" type="checkbox" id="qualquer">
+        </div>
+        <div class="col-md-4 ">
+          <label class="form-check-label" for="exibir">
+          Exibir descrição: 
+          </label>
+            <input class="form-check-input" type="checkbox" id="exibir">
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <button onclick="lerArq()" class="btn btn-primary"> Calcular</button>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h4><div id="pdfText" class="mt-4"></div> </h4>
+            <button id="copiarB" class="btn btn-sm btn-outline-info d-none" onclick="copy()">Copiar</button> <i id="avisoB"></i>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <ul id="lista" class="list-group mt-4"></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+var escreve = false;
+var doc = [];
+var finalText = "";
+var contador = 0;
+var soma = 0.0;
+var inicio;
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js';
+
+$("#dropDesc .dropdown-item").click(function(e) {
+    desc.value = e.target.innerHTML;
+});
+$("#qualquer").change(function(e)
+{
+    if(e.target.checked){
+        numBanco.value="0.0";
+        numBanco.disabled = true;
+    }
+    else
+    {
+        numBanco.value="";
+        numBanco.disabled = false;
+    }
+})
+
+function lerArq() {
+    var file = document.getElementById('fileInput').files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var typedarray = new Uint8Array(e.target.result);
+        parsePDF(typedarray);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parsePDF(data) {
+    doc = [];    
+    finalText = "";
+    pdfjsLib.getDocument(data).promise.then(function(pdf) {
+        var maxPages = pdf.numPages; // número total de páginas no PDF
+        var pageNumber = 1; // começando da primeira página
+        renderPage(pdf, pageNumber, maxPages);
+    });
+}
+
+function renderPage(pdf, pageNumber, maxPages) {
+	
+    if (pageNumber > maxPages)
+	{
+		calc();
+		return; 
+	}// termina se todas as páginas foram processadas
+
+    pdf.getPage(pageNumber).then(function(page) {
+        page.getTextContent().then(function(textContent) {
+            let textItems = textContent.items;
+            for (let i = 0; i < textItems.length; i++) {
+                let item = textItems[i];
+                finalText += item.str + ';';
+            }	
+            renderPage(pdf, pageNumber + 1, maxPages);
+        });
+    });
+}
+
+function convert(currency){
+    return parseFloat(currency.replace(",","/").replaceAll(".",",").replace("/",".").replace(/[^0-9.-]+/g,""));
+}
+
+function nF(num)
+{
+	return num.toLocaleString('pt-BR', {minimumFractionDigits: 2,maximumFractionDigits: 2});
+}
+
+function copy()
+{
+navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([ document.getElementById('pdfText').innerHTML], {type: 'text/html'})})]);
+document.getElementById('avisoB').innerHTML="Copiado!";
+}
+
+function calc()
+{
+    document.getElementById("lista").innerHTML = "";
+    document.getElementById('pdfText').innerHTML = "";
+    document.getElementById('avisoB').innerHTML="";
+
+    if(desc.value=="" || numBanco.value==""){
+       copiarB.classList.add("d-none");
+       return;
+    }
+    finalText.split("Competência").forEach((paragraph, linha)=>{
+        if(linha!=0){
+            paragraph.split(";").forEach((campo, key, arr) => {
+            if(!campo.includes("Extrato") && campo.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(desc.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")))
+                {
+                    if(qualquer.checked || numBanco.value == convert(arr.at(key+1)))
+                    doc.push({valor: arr.at(key+1), data: arr.at(13), descricao:campo});
+                    //else console.log(arr.at(key+1).replace(",","."));
+                }
+            });
+        }
+    });
+            console.log(doc);
+    escreverDados();
+}
+
+function escreverDados(){
+	contador = 0;
+	soma = 0.0;
+	maxV = 0;
+	minV = Infinity;
+
+	doc.forEach((item)=>{
+		let val = convert(item.valor);
+    	soma += val;
+        contador++;
+        let paragrafo = document.createElement("li");
+        paragrafo.innerHTML ="<b>R$ "+ nF(val) + "</b> - " + item.data;
+        if(exibir.checked) paragrafo.innerHTML += " ("+ item.descricao+ ")";
+        paragrafo.classList.add("list-group-item");
+        document.getElementById("lista").append(paragrafo);
+
+        if(qualquer.checked){
+    		if(val>maxV) maxV = val;
+    		if(val<minV) minV = val;
+        }
+	});
+	
+    if(contador > 0)
+        inicio = (doc.at(0)).data;
+    else{
+        copiarB.classList.add("d-none");
+        document.getElementById('pdfText').innerHTML = "Não foram identificados descontos, verifique o preenchimento dos dados";
+        return;
+    }
+
+      copiarB.classList.remove("d-none");
+      if(!qualquer.checked) intervalo = ("R$ "+ nF(soma/contador)).replace(".", ",");
+      else intervalo = "R$ "+nF(minV)+" - R$ "+ nF(maxV);
+      document.getElementById('pdfText').innerHTML = ("<table><tbody><tr><td><strong>Nº do contrato</strong></td><td><strong>Início dos descontos</strong></td><td><strong>Nº de descontos</strong></td><td><strong>Valor da parcela</strong></td><td><strong>Valor descontado</strong></td></tr><tr><td></td><td>"+inicio+"</td><td>"+contador+"</td><td>" +intervalo+"</td><td>R$ "+nF(soma)+"</td></tr></tbody></table>");
+
+
+}
+</script>
+</body>
+</html>
