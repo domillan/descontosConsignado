@@ -38,7 +38,7 @@ border-spacing: 2px;
 <h6 class="text-end">Feito por <a href="http://lattes.cnpq.br/6702944102751831">Daniel Millan</a></h6>
     <div class="row mt-4">
         <div class="col-md-6">
-            <label for="fileInput" class="form-label">Selecione o arquivo PDF:</label>
+            <label for="fileInput" class="form-label">Selecione o arquivo PDF:</label>             <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="popover" data-bs-html="true" data-bs-title="Histórico de Créditos" data-bs-trigger="focus" data-bs-content='<img src="./doc.png" width="250px">' >?</button>
             <input type="file" id="fileInput" class="form-control" accept=".pdf">
         </div>
     </div>
@@ -58,9 +58,7 @@ border-spacing: 2px;
                 <li><a class="dropdown-item" >Empréstimo bancário</a></li>
                 <li><a class="dropdown-item" >Empréstimo sobre a RMC</a></li>
                 <li><a class="dropdown-item">Contribuição</a></li>
-		      
                 <li><hr class="dropdown-divider"></li>
-		      
                 <li><a class="dropdown-item">Contribuição ABAMSP</a></li>
                 <li><a class="dropdown-item">Contribuição ANAPPS</a></li>
                 <li><a class="dropdown-item">Contribuição ASBAPI</a></li>
@@ -112,6 +110,11 @@ var contador = 0;
 var soma = 0.0;
 var inicio;
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js';
+
+var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+  var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+    return new bootstrap.Popover(popoverTriggerEl)
+  });
 
 $("#dropDesc .dropdown-item").click(function(e) {
     desc.value = e.target.innerHTML;
