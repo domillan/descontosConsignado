@@ -34,8 +34,8 @@ border-spacing: 2px;
 <div class="container">
     <h1 class="mt-5">Descontos no benefício previdenciário</h1>
                     <div class="btn-group">
-  <span class="btn btn-sm btn-secondary active disabled" aria-current="page">Histórico de Créditos</span>
-  <a href="https://domillan.github.io/descontosCartao/" class="btn  btn-sm btn-secondary">Histórico de Empréstimo</a>
+  <span class="btn btn-sm btn-outline-secondary active" aria-current="page">Histórico de Créditos</span>
+  <a href="https://domillan.github.io/descontosCartao/" class="btn  btn-sm btn-outline-secondary">Histórico de Empréstimo</a>
 </div>
 <h6 class="text-end">Feito por <a href="http://lattes.cnpq.br/6702944102751831">Daniel Millan</a></h6>
 
@@ -94,6 +94,7 @@ border-spacing: 2px;
     </div>
     <div class="row mt-4">
         <div class="col-md-12">
+            <h6 id="avisoPDF" class="text-danger"></h6>
             <h4><div id="pdfText" class="mt-4"></div> </h4>
             <button id="copiarB" class="btn btn-sm btn-outline-info d-none" onclick="copy()">Copiar</button> <i id="avisoB"></i>
         </div>
@@ -137,7 +138,10 @@ $("#qualquer").change(function(e)
 
 function lerArq() {
     var file = document.getElementById('fileInput').files[0];
-    if (!file) return;
+    if (!file){
+         document.getElementById('avisoPDF').innerHTML = "<b>Aviso:</b> selecione um arquivo PDF.";
+         return;
+      }
 
     var reader = new FileReader();
     reader.onload = function(e) {
@@ -196,10 +200,12 @@ function calc()
 {
     document.getElementById("lista").innerHTML = "";
     document.getElementById('pdfText').innerHTML = "";
+    document.getElementById('avisoPDF').innerHTML = "";
     document.getElementById('avisoB').innerHTML="";
 
     if(desc.value=="" || numBanco.value==""){
        copiarB.classList.add("d-none");
+       document.getElementById('avisoPDF').innerHTML = "<b>Aviso:</b> preencha os campos em branco.";
        return;
     }
     finalText.split("Competência").forEach((paragraph, linha)=>{
@@ -244,7 +250,7 @@ function escreverDados(){
         inicio = (doc.at(0)).data;
     else{
         copiarB.classList.add("d-none");
-        document.getElementById('pdfText').innerHTML = "Não foram identificados descontos, verifique o preenchimento dos dados";
+        document.getElementById('avisoPDF').innerHTML = "Não foram identificados descontos, verifique se os dados foram preenchidos corretamente.";
         return;
     }
 
